@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotary Archive</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <h1>The Rotary Archive</h1>
+
+    <div id="step-1" class="section">
+        <label for="phoneNumber"><strong>Enter a Phone Number (1-7 digits):</strong></label>
+        <input type="text" id="phoneNumber" maxlength="7" pattern="\d*" placeholder="e.g., 007 or 5551234">
+        <button id="checkBtn">Check Number</button>
+    </div>
+
+    <div id="step-2" class="section hidden">
+        <h2 id="displayNumber">Number: </h2>
+        
+        <div id="historyContainer">
+            <h3>History</h3>
+            <div id="historyList"></div>
+        </div>
+
+        <hr>
+
+        <h3>Record New Entry</h3>
+        <button id="recordBtn">⏺ Start Recording</button>
+        <button id="stopBtn" disabled>⏹ Stop Recording</button>
+        <span id="recordingStatus"></span>
+
+        <br><br>
+        <audio id="audioPlayback" controls class="hidden"></audio>
+
+        <br><br>
+        <label for="description"><strong>Description:</strong></label>
+        <input type="text" id="description" placeholder="What is this recording about?">
+
+        <button id="submitBtn" disabled>Submit to Archive</button>
+    </div>
+
+</body>
+</html>
