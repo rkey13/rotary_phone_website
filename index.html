@@ -8,39 +8,49 @@
     <script src="app.js" defer></script>
 </head>
 <body>
-
     <h1>The Rotary Archive</h1>
 
     <div id="step-1" class="section">
-        <label for="phoneNumber"><strong>Enter a Phone Number (1-7 digits):</strong></label>
-        <input type="text" id="phoneNumber" maxlength="7" pattern="\d*" placeholder="e.g., 007 or 5551234">
-        <button id="checkBtn">Check Number</button>
+        <label><strong>Enter Phone Number (1-7 digits):</strong></label>
+        <input type="text" id="phoneNumber" maxlength="7" pattern="\d*">
+        <label><strong>Password (leave blank if none):</strong></label>
+        <input type="password" id="numberPassword" placeholder="Optional">
+        <button id="checkBtn">Access Number</button>
     </div>
 
     <div id="step-2" class="section hidden">
-        <h2 id="displayNumber">Number: </h2>
+        <h2 id="displayNumber"></h2>
+        <p id="numberStatus" style="color: red; font-weight: bold;"></p>
         
         <div id="historyContainer">
-            <h3>History</h3>
+            <h3>Audio History</h3>
             <div id="historyList"></div>
         </div>
 
         <hr>
 
-        <h3>Record New Entry</h3>
-        <button id="recordBtn">⏺ Start Recording</button>
-        <button id="stopBtn" disabled>⏹ Stop Recording</button>
-        <span id="recordingStatus"></span>
+        <div id="recordingSection">
+            <h3>Add New Recording</h3>
+            <p><strong>Option A: Upload File</strong></p>
+            <input type="file" id="fileUpload" accept="audio/*">
+            
+            <p><strong>Option B: Record Mic</strong></p>
+            <button id="recordBtn">⏺ Start</button>
+            <button id="stopBtn" disabled>⏹ Stop</button>
+            <span id="recordingStatus"></span>
+            
+            <br><br>
+            <audio id="audioPreview" controls class="hidden"></audio>
 
-        <br><br>
-        <audio id="audioPlayback" controls class="hidden"></audio>
+            <br><br>
+            <label><strong>Description:</strong></label>
+            <input type="text" id="description" placeholder="Description">
 
-        <br><br>
-        <label for="description"><strong>Description:</strong></label>
-        <input type="text" id="description" placeholder="What is this recording about?">
+            <label><input type="checkbox" id="isPublic" checked> Make recording public?</label><br>
+            <label><input type="checkbox" id="lockNumber"> Lock number? (Prevents future submissions)</label><br><br>
 
-        <button id="submitBtn" disabled>Submit to Archive</button>
+            <button id="submitBtn" disabled>Submit to Archive</button>
+        </div>
     </div>
-
 </body>
 </html>
