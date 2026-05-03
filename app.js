@@ -23,6 +23,7 @@ let currentNumber = "";
 let currentPassword = "";
 let activeAudioFile = null; // Can be a File or a Blob
 let mediaRecorder;
+let activeRecordingExtension = 'webm'; // Default fallback
 let audioChunks = [];
 
 // --- LOAD NUMBER DATA ---
@@ -88,34 +89,47 @@ window.setDeployment = async (recordingId) => {
 };
 
 // --- AUDIO INPUT (FILE VS MIC) ---
-fileUpload.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-        activeAudioFile = e.target.files[0];
-        audioPreview.src = URL.createObjectURL(activeAudioFile);
-        audioPreview.classList.remove('hidden');
-        submitBtn.disabled = false;
-        recordBtn.disabled = true; // Disable mic if file selected
-    }
-});
-
+// --- AUDIO INPUT (FILE VS MIC) ---
 recordBtn.addEventListener('click', async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks = [];
-    
-    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-    mediaRecorder.onstop = () => {
-        activeAudioFile = new Blob(audioChunks, { type: 'audio/webm' });
-        audioPreview.src = URL.createObjectURL(activeAudioFile);
-        audioPreview.classList.remove('hidden');
-        submitBtn.disabled = false;
-        stream.getTracks().forEach(track => track.stop());
-    };
-    
-    mediaRecorder.start();
-    recordBtn.disabled = true;
-    stopBtn.disabled = false;
-    fileUpload.disabled = true; // Disable upload if recording
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Ask the browser what format it supports
+        let mimeType = '';
+        if (MediaRecorder.isTypeSupported('audio/webm')) {
+            mimeType = 'audio/webm';
+            activeRecordingExtension = 'webm';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            mimeType = 'audio/mp4';
+            activeRecordingExtension = 'm4a'; // Safari preference
+        } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+            mimeType = 'audio/aac';
+            activeRecordingExtension = 'aac'; // Safari fallback
+        }
+
+        const options = mimeType ? { mimeType } : {};
+        mediaRecorder = new MediaRecorder(stream, options);
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+        
+        mediaRecorder.onstop = () => {
+            // Package it using the exact format the browser used
+            activeAudioFile = new Blob(audioChunks, { type: mediaRecorder.mimeType || mimeType || 'audio/mp4' });
+            audioPreview.src = URL.createObjectURL(activeAudioFile);
+            audioPreview.classList.remove('hidden');
+            submitBtn.disabled = false;
+            stream.getTracks().forEach(track => track.stop());
+        };
+        
+        mediaRecorder.start();
+        recordBtn.disabled = true;
+        stopBtn.disabled = false;
+        fileUpload.disabled = true;
+    } catch (err) {
+        alert("Microphone access denied or not available. Please check browser permissions.");
+        console.error(err);
+    }
 });
 
 stopBtn.addEventListener('click', () => {
@@ -133,7 +147,7 @@ submitBtn.addEventListener('click', async () => {
     formData.append('isPublic', isPublicCheckbox.checked);
     formData.append('lockNumber', lockNumberCheckbox.checked);
     // Determine extension based on input type
-    const ext = activeAudioFile instanceof File ? activeAudioFile.name.split('.').pop() : 'webm';
+    const ext = activeAudioFile instanceof File ? activeAudioFile.name.split('.').pop() : activeRecordingExtension;
     formData.append('audioFile', activeAudioFile, `${currentNumber}_${Date.now()}.${ext}`);
 
     submitBtn.innerText = "Uploading..."; submitBtn.disabled = true;
