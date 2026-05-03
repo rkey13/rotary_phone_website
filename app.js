@@ -32,32 +32,27 @@ checkBtn.addEventListener('click', async () => {
     historyList.innerHTML = "<em>Loading history...</em>";
     step2.classList.remove('hidden');
 
-    /* * TODO: Replace this simulated fetch with your actual Cloudflare Worker URL
-     * const response = await fetch(`https://your-worker.workers.dev/api/history/${currentNumber}`);
-     * const historyData = await response.json();
-     */
-    
-    // Simulating API response delay
-    setTimeout(() => {
-        // Simulated data - in reality, this comes from your Cloudflare D1 database
-        const historyData = currentNumber === "555" ? [
-            { desc: "Testing the mic", date: "2026-05-01" }
-        ] : [];
+    try {
+        // Real fetch to your local worker
+        const response = await fetch(`http://127.0.0.1:8787/api/history/${currentNumber}`);
+        const historyData = await response.json();
 
         if (historyData.length === 0) {
             historyList.innerHTML = "<p>This is a brand new number! You are the first to record.</p>";
         } else {
             historyList.innerHTML = historyData.map(item => 
-                `<div class="history-item"><strong>${item.date}</strong>: ${item.desc}</div>`
+                `<div class="history-item"><strong>${new Date(item.date).toLocaleString()}</strong>: ${item.description}</div>`
             ).join('');
         }
-    }, 500);
+    } catch (error) {
+        console.error("Failed to fetch history:", error);
+        historyList.innerHTML = "<p style='color:red;'>Error loading history.</p>";
+    }
 });
 
 // --- STEP 2: AUDIO RECORDING ---
 recordBtn.addEventListener('click', async () => {
     try {
-        // Request microphone access
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new MediaRecorder(stream);
         audioChunks = [];
@@ -69,15 +64,13 @@ recordBtn.addEventListener('click', async () => {
         };
 
         mediaRecorder.onstop = () => {
-            // Combine chunks into a single playable audio blob
             finalAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
             const audioUrl = URL.createObjectURL(finalAudioBlob);
             
             audioPlayback.src = audioUrl;
             audioPlayback.classList.remove('hidden');
-            submitBtn.disabled = false; // Enable submit button
+            submitBtn.disabled = false;
             
-            // Stop all microphone tracks to release the hardware
             stream.getTracks().forEach(track => track.stop());
         };
 
@@ -93,7 +86,6 @@ recordBtn.addEventListener('click', async () => {
     }
 });
 
-// Stop Recording
 stopBtn.addEventListener('click', () => {
     mediaRecorder.stop();
     recordBtn.disabled = false;
@@ -109,31 +101,37 @@ submitBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Package the data using FormData
     const formData = new FormData();
     formData.append('phoneNumber', currentNumber);
     formData.append('description', desc);
-    // Append the audio file with a filename
     formData.append('audioFile', finalAudioBlob, `${currentNumber}_${Date.now()}.webm`);
 
     submitBtn.innerText = "Uploading...";
     submitBtn.disabled = true;
 
-    /* * TODO: Send this to your Cloudflare Worker endpoint
-     * await fetch('https://your-worker.workers.dev/api/submit', {
-     * method: 'POST',
-     * body: formData
-     * });
-     */
+    try {
+        // Real POST request to your local worker
+        const response = await fetch('http://127.0.0.1:8787/api/submit', {
+            method: 'POST',
+            body: formData
+        });
 
-    // Simulate upload delay
-    setTimeout(() => {
-        alert("Successfully saved to the archive!");
-        // Reset UI
-        step2.classList.add('hidden');
-        phoneNumberInput.value = "";
-        descriptionInput.value = "";
-        audioPlayback.classList.add('hidden');
+        if (response.ok) {
+            alert("Successfully saved to the archive!");
+            step2.classList.add('hidden');
+            phoneNumberInput.value = "";
+            descriptionInput.value = "";
+            audioPlayback.classList.add('hidden');
+            submitBtn.innerText = "Submit to Archive";
+        } else {
+            alert("Failed to upload recording.");
+            submitBtn.innerText = "Submit to Archive";
+            submitBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error("Upload error:", error);
+        alert("An error occurred during upload.");
         submitBtn.innerText = "Submit to Archive";
-    }, 1000);
+        submitBtn.disabled = false;
+    }
 });
