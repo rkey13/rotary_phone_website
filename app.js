@@ -34,7 +34,7 @@ checkBtn.addEventListener('click', async () => {
 
     try {
         // Real fetch to your local worker
-        const response = await fetch(`http://127.0.0.1:8787/api/history/${currentNumber}`);
+        const response = await fetch(`https://rotary-backend.rkey13.workers.dev/api/history/${currentNumber}`);
         const historyData = await response.json();
 
         if (historyData.length === 0) {
@@ -111,7 +111,7 @@ submitBtn.addEventListener('click', async () => {
 
     try {
         // Real POST request to your local worker
-        const response = await fetch('http://127.0.0.1:8787/api/submit', {
+        const response = await fetch('https://rotary-backend.rkey13.workers.dev/api/submit', {
             method: 'POST',
             body: formData
         });
