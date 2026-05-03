@@ -113,12 +113,28 @@ recordBtn.addEventListener('click', async () => {
         
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
         
+
         mediaRecorder.onstop = () => {
-            // Package it using the exact format the browser used
-            activeAudioFile = new Blob(audioChunks, { type: mediaRecorder.mimeType || mimeType || 'audio/mp4' });
-            audioPreview.src = URL.createObjectURL(activeAudioFile);
+            // 1. Create the Blob using the exact mimeType the recorder used
+            // Safari is extremely sensitive to this matching perfectly
+            const recordedMimeType = mediaRecorder.mimeType || 'audio/mp4';
+            activeAudioFile = new Blob(audioChunks, { type: recordedMimeType });
+            
+            // 2. Create the URL
+            const audioUrl = URL.createObjectURL(activeAudioFile);
+            
+            // 3. Setup the preview player
+            audioPreview.src = audioUrl;
+            
+            // --- THE SAFARI FIX ---
+            // Force Safari to actually look at and "buffer" the blob data
+            audioPreview.load(); 
+            // ----------------------
+
             audioPreview.classList.remove('hidden');
             submitBtn.disabled = false;
+            
+            // 4. Cleanup the microphone
             stream.getTracks().forEach(track => track.stop());
         };
         
