@@ -45,10 +45,10 @@ async function refreshHistory() {
         
         // Handle Lock State
         if (data.state && data.state.is_locked === 1) {
-            numberStatus.innerText = "🔒 This number is locked for new submissions.";
-            recordingSection.classList.add('hidden');
+            numberStatus.innerText = "🔒 This number is locked. Only the owner can submit new recordings.";
+            recordingSection.classList.remove('hidden'); // Keep UI visible for the owner
         } else {
-            numberStatus.innerText = "";
+            numberStatus.innerText = "🔓 This number is open. Anyone can leave a recording without a password.";
             recordingSection.classList.remove('hidden');
         }
 
