@@ -178,9 +178,54 @@ submitBtn.addEventListener('click', async () => {
         audioPreview.classList.add('hidden');
         submitBtn.innerText = "Submit to Archive";
         refreshHistory();
+        loadDirectory();
     } else {
         const err = await res.text();
         alert("Upload failed: " + err);
         submitBtn.innerText = "Submit to Archive"; submitBtn.disabled = false;
     }
 });
+
+// --- DIRECTORY LOGIC ---
+const directoryList = document.getElementById('directoryList');
+
+async function loadDirectory() {
+    try {
+        const res = await fetch(`${API_URL}/api/directory`);
+        const numbers = await res.json();
+
+        if (numbers.length === 0) {
+            directoryList.innerHTML = "<p>The directory is currently empty.</p>";
+            return;
+        }
+
+        directoryList.innerHTML = numbers.map(n => `
+            <div class="directory-item" style="border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong style="font-size: 1.2rem; color: #007bff; cursor: pointer;" onclick="quickAccess('${n.phone_number}')">
+                        ${n.phone_number}
+                    </strong>
+                    ${n.is_locked ? ' 🔒' : ''}
+                    <br>
+                    <small>${n.description || "No description provided."}</small>
+                </div>
+                <button onclick="quickAccess('${n.phone_number}')">View</button>
+            </div>
+        `).join('');
+    } catch (err) {
+        directoryList.innerHTML = "<p>Error loading directory.</p>";
+    }
+}
+
+// Function to automatically fill the number and scroll up
+window.quickAccess = (num) => {
+    phoneNumberInput.value = num;
+    // Scroll to top of page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Trigger the existing check button logic
+    checkBtn.click();
+};
+
+// Load the directory immediately when the page opens
+loadDirectory();
+
