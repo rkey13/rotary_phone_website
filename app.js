@@ -237,7 +237,16 @@ submitBtn.addEventListener('click', async () => {
 });
 
 // --- DIRECTORY LOGIC ---
+// --- DIRECTORY LOGIC ---
 const directoryList = document.getElementById('directoryList');
+
+// Helper function to format 7-digit numbers with a hyphen
+function formatPhoneNumber(numStr) {
+    if (numStr && numStr.length === 7) {
+        return `${numStr.slice(0, 3)}-${numStr.slice(3)}`;
+    }
+    return numStr; // Return shorter numbers (like '911' or '007') exactly as they are
+}
 
 async function loadDirectory() {
     try {
@@ -249,9 +258,11 @@ async function loadDirectory() {
             return;
         }
 
-        // FIXED: Display the project name in the directory list if it exists
         directoryList.innerHTML = numbers.map(n => {
-            const displayTitle = n.project_name ? `${n.project_name} (${n.phone_number})` : n.phone_number;
+            // Apply the formatting here for the visual title
+            const formattedNum = formatPhoneNumber(n.phone_number);
+            const displayTitle = n.project_name ? `${n.project_name} (${formattedNum})` : formattedNum;
+            
             return `
             <div class="directory-item" style="border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -270,6 +281,14 @@ async function loadDirectory() {
         directoryList.innerHTML = "<p>Error loading directory.</p>";
     }
 }
+
+window.quickAccess = (num) => {
+    phoneNumberInput.value = num;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    checkBtn.click();
+};
+
+loadDirectory();
 
 window.quickAccess = (num) => {
     phoneNumberInput.value = num;
