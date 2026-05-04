@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archive Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="admin.js" defer></script>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th, td { border: 1px solid #00ffff; padding: 8px; text-align: left; }
+        th { background: rgba(0, 255, 255, 0.2); color: #ff00ff; }
+        .danger-btn { border-color: red; color: red; }
+        .danger-btn:hover { background: red; color: white; box-shadow: 0 0 10px red; }
+    </style>
+</head>
+<body>
+    <h1>System Override Console</h1>
+
+    <div id="loginSection" class="section">
+        <label><strong>Admin Master Password:</strong></label>
+        <input type="password" id="adminPassword" placeholder="Enter override code">
+        <button id="loginBtn">Authenticate</button>
+    </div>
+
+    <div id="dashboardSection" class="section hidden">
+        <button id="refreshBtn" style="float: right;">Refresh Data</button>
+        <h2>Admin Dashboard</h2>
+        
+        <h3>Registered Numbers</h3>
+        <div style="overflow-x: auto;">
+            <table id="numbersTable">
+                <thead><tr><th>Number</th><th>Project Name</th><th>Locked?</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <br><hr><br>
+
+        <h3>All Audio Recordings</h3>
+        <div style="overflow-x: auto;">
+            <table id="recordingsTable">
+                <thead><tr><th>ID</th><th>Number</th><th>Description</th><th>Public?</th><th>Audio</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
