@@ -15,6 +15,7 @@ const recordBtn = document.getElementById('recordBtn');
 const stopBtn = document.getElementById('stopBtn');
 const audioPreview = document.getElementById('audioPreview');
 const descriptionInput = document.getElementById('description');
+const numberNameInput = document.getElementById('numberName');
 const isPublicCheckbox = document.getElementById('isPublic');
 const lockNumberCheckbox = document.getElementById('lockNumber');
 const submitBtn = document.getElementById('submitBtn');
