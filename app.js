@@ -89,7 +89,35 @@ window.setDeployment = async (recordingId) => {
 };
 
 // --- AUDIO INPUT (FILE VS MIC) ---
-// --- AUDIO INPUT (FILE VS MIC) ---
+
+// 1. File Upload Logic (This was missing!)
+fileUpload.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+        activeAudioFile = e.target.files[0];
+        
+        // Unlock submit button immediately
+        submitBtn.disabled = false;
+        submitBtn.removeAttribute('disabled');
+        recordBtn.disabled = true; // Disable mic to prevent clashing
+
+        try {
+            audioPreview.src = URL.createObjectURL(activeAudioFile);
+            audioPreview.load(); // Safari fix
+            audioPreview.classList.remove('hidden');
+        } catch (err) {
+            console.warn("Preview failed, but upload works.", err);
+            audioPreview.classList.add('hidden');
+        }
+    } else {
+        // Reset if they canceled the file menu
+        activeAudioFile = null;
+        submitBtn.disabled = true;
+        recordBtn.disabled = false;
+        audioPreview.classList.add('hidden');
+    }
+});
+
+// 2. Microphone Logic
 recordBtn.addEventListener('click', async () => {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -113,28 +141,18 @@ recordBtn.addEventListener('click', async () => {
         
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
         
-
         mediaRecorder.onstop = () => {
-            // 1. Create the Blob using the exact mimeType the recorder used
-            // Safari is extremely sensitive to this matching perfectly
+            // Create Blob and URL
             const recordedMimeType = mediaRecorder.mimeType || 'audio/mp4';
             activeAudioFile = new Blob(audioChunks, { type: recordedMimeType });
-            
-            // 2. Create the URL
             const audioUrl = URL.createObjectURL(activeAudioFile);
             
-            // 3. Setup the preview player
+            // Setup preview
             audioPreview.src = audioUrl;
-            
-            // --- THE SAFARI FIX ---
-            // Force Safari to actually look at and "buffer" the blob data
-            audioPreview.load(); 
-            // ----------------------
-
+            audioPreview.load(); // Safari fix
             audioPreview.classList.remove('hidden');
             submitBtn.disabled = false;
             
-            // 4. Cleanup the microphone
             stream.getTracks().forEach(track => track.stop());
         };
         
@@ -156,33 +174,53 @@ stopBtn.addEventListener('click', () => {
 
 // --- SUBMISSION ---
 submitBtn.addEventListener('click', async () => {
+    if (!activeAudioFile) {
+        alert("Please record or upload an audio file first.");
+        return;
+    }
+
     const formData = new FormData();
     formData.append('phoneNumber', currentNumber);
-    formData.append('description', descriptionInput.value);
+    formData.append('description', descriptionInput.value || "No description");
     formData.append('password', currentPassword);
     formData.append('isPublic', isPublicCheckbox.checked);
     formData.append('lockNumber', lockNumberCheckbox.checked);
+    
     // Determine extension based on input type
-    const ext = activeAudioFile instanceof File ? activeAudioFile.name.split('.').pop() : activeRecordingExtension;
+    const ext = activeAudioFile.name ? activeAudioFile.name.split('.').pop() : activeRecordingExtension;
     formData.append('audioFile', activeAudioFile, `${currentNumber}_${Date.now()}.${ext}`);
 
-    submitBtn.innerText = "Uploading..."; submitBtn.disabled = true;
+    submitBtn.innerText = "Uploading..."; 
+    submitBtn.disabled = true;
 
-    const res = await fetch(`${API_URL}/api/submit`, { method: 'POST', body: formData });
-    
-    if (res.ok) {
-        alert("Success!");
-        activeAudioFile = null;
-        fileUpload.value = '';
-        fileUpload.disabled = false;
-        audioPreview.classList.add('hidden');
-        submitBtn.innerText = "Submit to Archive";
-        refreshHistory();
-        loadDirectory();
-    } else {
-        const err = await res.text();
-        alert("Upload failed: " + err);
-        submitBtn.innerText = "Submit to Archive"; submitBtn.disabled = false;
+    try {
+        const res = await fetch(`${API_URL}/api/submit`, { method: 'POST', body: formData });
+        
+        if (res.ok) {
+            alert("Successfully saved to the archive!");
+            
+            // Reset UI completely
+            activeAudioFile = null;
+            fileUpload.value = '';
+            fileUpload.disabled = false;
+            recordBtn.disabled = false;
+            audioPreview.classList.add('hidden');
+            descriptionInput.value = '';
+            
+            submitBtn.innerText = "Submit to Archive";
+            refreshHistory();
+            if (typeof loadDirectory === 'function') loadDirectory();
+        } else {
+            const err = await res.text();
+            alert("Upload failed: " + err);
+            submitBtn.innerText = "Submit to Archive"; 
+            submitBtn.disabled = false;
+        }
+    } catch (err) {
+        console.error("Network Error:", err);
+        alert("Network error: Could not connect to the server.");
+        submitBtn.innerText = "Submit to Archive"; 
+        submitBtn.disabled = false;
     }
 });
 
@@ -217,15 +255,10 @@ async function loadDirectory() {
     }
 }
 
-// Function to automatically fill the number and scroll up
 window.quickAccess = (num) => {
     phoneNumberInput.value = num;
-    // Scroll to top of page
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Trigger the existing check button logic
     checkBtn.click();
 };
 
-// Load the directory immediately when the page opens
 loadDirectory();
-
