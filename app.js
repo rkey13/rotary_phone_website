@@ -6,6 +6,8 @@ const passwordInput = document.getElementById('numberPassword');
 const checkBtn = document.getElementById('checkBtn');
 const step2 = document.getElementById('step-2');
 const displayNumber = document.getElementById('displayNumber');
+// FIXED: Added displayProjectName in case you added it to your HTML
+const displayProjectName = document.getElementById('displayProjectName'); 
 const numberStatus = document.getElementById('numberStatus');
 const historyList = document.getElementById('historyList');
 const recordingSection = document.getElementById('recordingSection');
@@ -15,16 +17,16 @@ const recordBtn = document.getElementById('recordBtn');
 const stopBtn = document.getElementById('stopBtn');
 const audioPreview = document.getElementById('audioPreview');
 const descriptionInput = document.getElementById('description');
-const numberNameInput = document.getElementById('numberName');
+const numberNameInput = document.getElementById('numberName'); // Your project name input
 const isPublicCheckbox = document.getElementById('isPublic');
 const lockNumberCheckbox = document.getElementById('lockNumber');
 const submitBtn = document.getElementById('submitBtn');
 
 let currentNumber = "";
 let currentPassword = "";
-let activeAudioFile = null; // Can be a File or a Blob
+let activeAudioFile = null; 
 let mediaRecorder;
-let activeRecordingExtension = 'webm'; // Default fallback
+let activeRecordingExtension = 'webm'; 
 let audioChunks = [];
 
 // --- LOAD NUMBER DATA ---
@@ -45,10 +47,19 @@ async function refreshHistory() {
         const res = await fetch(`${API_URL}/api/history/${currentNumber}`);
         const data = await res.json();
         
+        // FIXED: Pull the project name from the database and show it / prefill the input
+        if (data.state && data.state.project_name) {
+            if (displayProjectName) displayProjectName.innerText = data.state.project_name;
+            if (numberNameInput) numberNameInput.value = data.state.project_name; 
+        } else {
+            if (displayProjectName) displayProjectName.innerText = "";
+            if (numberNameInput) numberNameInput.value = "";
+        }
+
         // Handle Lock State
         if (data.state && data.state.is_locked === 1) {
             numberStatus.innerText = "🔒 This number is locked. Only the owner can submit new recordings.";
-            recordingSection.classList.remove('hidden'); // Keep UI visible for the owner
+            recordingSection.classList.remove('hidden'); 
         } else {
             numberStatus.innerText = "🔓 This number is open. Anyone can leave a recording without a password.";
             recordingSection.classList.remove('hidden');
@@ -85,32 +96,30 @@ window.setDeployment = async (recordingId) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phoneNumber: currentNumber, recordingId, password: currentPassword })
     });
-    if (res.ok) { alert("Deployment updated!"); refreshHistory(); }
+    if (res.ok) { alert("Deployment updated!"); refreshHistory(); if (typeof loadDirectory === 'function') loadDirectory(); }
     else { alert("Unauthorized: Incorrect password."); }
 };
 
 // --- AUDIO INPUT (FILE VS MIC) ---
 
-// 1. File Upload Logic (This was missing!)
+// 1. File Upload Logic
 fileUpload.addEventListener('change', (e) => {
     if (e.target.files && e.target.files.length > 0) {
         activeAudioFile = e.target.files[0];
         
-        // Unlock submit button immediately
         submitBtn.disabled = false;
         submitBtn.removeAttribute('disabled');
-        recordBtn.disabled = true; // Disable mic to prevent clashing
+        recordBtn.disabled = true; 
 
         try {
             audioPreview.src = URL.createObjectURL(activeAudioFile);
-            audioPreview.load(); // Safari fix
+            audioPreview.load(); 
             audioPreview.classList.remove('hidden');
         } catch (err) {
             console.warn("Preview failed, but upload works.", err);
             audioPreview.classList.add('hidden');
         }
     } else {
-        // Reset if they canceled the file menu
         activeAudioFile = null;
         submitBtn.disabled = true;
         recordBtn.disabled = false;
@@ -123,17 +132,16 @@ recordBtn.addEventListener('click', async () => {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         
-        // Ask the browser what format it supports
         let mimeType = '';
         if (MediaRecorder.isTypeSupported('audio/webm')) {
             mimeType = 'audio/webm';
             activeRecordingExtension = 'webm';
         } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
             mimeType = 'audio/mp4';
-            activeRecordingExtension = 'm4a'; // Safari preference
+            activeRecordingExtension = 'm4a'; 
         } else if (MediaRecorder.isTypeSupported('audio/aac')) {
             mimeType = 'audio/aac';
-            activeRecordingExtension = 'aac'; // Safari fallback
+            activeRecordingExtension = 'aac'; 
         }
 
         const options = mimeType ? { mimeType } : {};
@@ -143,14 +151,12 @@ recordBtn.addEventListener('click', async () => {
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
         
         mediaRecorder.onstop = () => {
-            // Create Blob and URL
             const recordedMimeType = mediaRecorder.mimeType || 'audio/mp4';
             activeAudioFile = new Blob(audioChunks, { type: recordedMimeType });
             const audioUrl = URL.createObjectURL(activeAudioFile);
             
-            // Setup preview
             audioPreview.src = audioUrl;
-            audioPreview.load(); // Safari fix
+            audioPreview.load(); 
             audioPreview.classList.remove('hidden');
             submitBtn.disabled = false;
             
@@ -182,12 +188,18 @@ submitBtn.addEventListener('click', async () => {
 
     const formData = new FormData();
     formData.append('phoneNumber', currentNumber);
+    
+    // FIXED: Actually append the project name to the form data being sent to the Worker!
+    // We use "projectName" as the key because that is what the Cloudflare Worker is looking for.
+    if (numberNameInput) {
+        formData.append('projectName', numberNameInput.value.trim());
+    }
+    
     formData.append('description', descriptionInput.value || "No description");
     formData.append('password', currentPassword);
     formData.append('isPublic', isPublicCheckbox.checked);
     formData.append('lockNumber', lockNumberCheckbox.checked);
     
-    // Determine extension based on input type
     const ext = activeAudioFile.name ? activeAudioFile.name.split('.').pop() : activeRecordingExtension;
     formData.append('audioFile', activeAudioFile, `${currentNumber}_${Date.now()}.${ext}`);
 
@@ -200,7 +212,6 @@ submitBtn.addEventListener('click', async () => {
         if (res.ok) {
             alert("Successfully saved to the archive!");
             
-            // Reset UI completely
             activeAudioFile = null;
             fileUpload.value = '';
             fileUpload.disabled = false;
@@ -238,11 +249,14 @@ async function loadDirectory() {
             return;
         }
 
-        directoryList.innerHTML = numbers.map(n => `
+        // FIXED: Display the project name in the directory list if it exists
+        directoryList.innerHTML = numbers.map(n => {
+            const displayTitle = n.project_name ? `${n.project_name} (${n.phone_number})` : n.phone_number;
+            return `
             <div class="directory-item" style="border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong style="font-size: 1.2rem; color: #007bff; cursor: pointer;" onclick="quickAccess('${n.phone_number}')">
-                        ${n.phone_number}
+                        ${displayTitle}
                     </strong>
                     ${n.is_locked ? ' 🔒' : ''}
                     <br>
@@ -250,7 +264,8 @@ async function loadDirectory() {
                 </div>
                 <button onclick="quickAccess('${n.phone_number}')">View</button>
             </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (err) {
         directoryList.innerHTML = "<p>Error loading directory.</p>";
     }
