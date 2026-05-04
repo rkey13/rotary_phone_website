@@ -1,6 +1,8 @@
 const API_URL = "https://rotary-backend.rkey13.workers.dev";
 
 // DOM Elements
+const passwordStatusBadge = document.getElementById('passwordStatusBadge');
+const updateSettingsBtn = document.getElementById('updateSettingsBtn');
 const phoneNumberInput = document.getElementById('phoneNumber');
 const passwordInput = document.getElementById('numberPassword');
 const checkBtn = document.getElementById('checkBtn');
@@ -30,6 +32,7 @@ let activeRecordingExtension = 'webm';
 let audioChunks = [];
 
 // --- LOAD NUMBER DATA ---
+// --- LOAD NUMBER DATA ---
 checkBtn.addEventListener('click', async () => {
     currentNumber = phoneNumberInput.value.trim();
     currentPassword = passwordInput.value.trim();
@@ -38,6 +41,33 @@ checkBtn.addEventListener('click', async () => {
 
     displayNumber.innerText = `Number: ${currentNumber}`;
     step2.classList.remove('hidden');
+    
+    // Check Password Status First
+    try {
+        const verifyRes = await fetch(`${API_URL}/api/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phoneNumber: currentNumber, password: currentPassword })
+        });
+        const verifyData = await verifyRes.json();
+        
+        if (verifyData.status === "new") {
+            passwordStatusBadge.innerText = "✨ Unclaimed Number";
+            passwordStatusBadge.style.background = "#ff00ff"; // Pink
+            updateSettingsBtn.disabled = true; // Can't update settings on a number that doesn't exist yet
+        } else if (verifyData.status === "owner") {
+            passwordStatusBadge.innerText = "🔑 Owner Verified";
+            passwordStatusBadge.style.background = "#00cc00"; // Green
+            updateSettingsBtn.disabled = false;
+        } else {
+            passwordStatusBadge.innerText = "👁️ Guest Mode (Read Only)";
+            passwordStatusBadge.style.background = "#ff9900"; // Orange
+            updateSettingsBtn.disabled = true; // Guests can't change settings
+        }
+    } catch (e) {
+        passwordStatusBadge.innerText = "Connection Error";
+    }
+
     await refreshHistory();
 });
 
@@ -57,12 +87,13 @@ async function refreshHistory() {
         }
 
         // Handle Lock State
+        // Handle Lock State
         if (data.state && data.state.is_locked === 1) {
             numberStatus.innerText = "🔒 This number is locked. Only the owner can submit new recordings.";
-            recordingSection.classList.remove('hidden'); 
+            lockNumberCheckbox.checked = true; // Check the box!
         } else {
             numberStatus.innerText = "🔓 This number is open. Anyone can leave a recording without a password.";
-            recordingSection.classList.remove('hidden');
+            lockNumberCheckbox.checked = false; // Uncheck the box!
         }
 
         if (data.recordings.length === 0) {
@@ -234,6 +265,39 @@ submitBtn.addEventListener('click', async () => {
         submitBtn.innerText = "Submit to Archive"; 
         submitBtn.disabled = false;
     }
+});
+
+// --- UPDATE SETTINGS WITHOUT AUDIO ---
+updateSettingsBtn.addEventListener('click', async () => {
+    updateSettingsBtn.innerText = "Saving...";
+    updateSettingsBtn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_URL}/api/update-settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                phoneNumber: currentNumber,
+                password: currentPassword,
+                projectName: numberNameInput.value.trim(),
+                lockNumber: lockNumberCheckbox.checked
+            })
+        });
+
+        if (res.ok) {
+            alert("Settings updated successfully!");
+            await refreshHistory();
+            if (typeof loadDirectory === 'function') loadDirectory();
+        } else {
+            const err = await res.text();
+            alert("Failed to update: " + err);
+        }
+    } catch (e) {
+        alert("Network error.");
+    }
+
+    updateSettingsBtn.innerText = "Save Settings";
+    updateSettingsBtn.disabled = false;
 });
 
 // --- DIRECTORY LOGIC ---
