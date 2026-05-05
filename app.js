@@ -69,9 +69,7 @@ async function accessNumber() {
     await refreshHistory();
 }
 
-// Attach the function to the button click
 checkBtn.addEventListener('click', accessNumber);
-
 
 async function refreshHistory() {
     historyList.innerHTML = "<em>Loading...</em>";
@@ -105,7 +103,6 @@ async function refreshHistory() {
             const isDeployed = data.state && data.state.deployed_recording_id === item.id;
             const audioUrl = `${API_URL}/api/audio/${item.audio_filename}?pw=${encodeURIComponent(currentPassword)}`;
 
-            // FIXED: Corrected the HTML tag syntax here
             return `
             <div class="history-item" ${isDeployed ? 'id="active-deployment"' : ''}>
                 <strong>${new Date(item.date).toLocaleString()}</strong>
@@ -303,10 +300,11 @@ updateSettingsBtn.addEventListener('click', async () => {
 const directoryList = document.getElementById('directoryList');
 
 function formatPhoneNumber(numStr) {
-    if (numStr && numStr.length === 7) {
-        return `${numStr.slice(0, 3)}-${numStr.slice(3)}`;
+    const str = String(numStr || ""); 
+    if (str.length === 7) {
+        return `${str.slice(0, 3)}-${str.slice(3)}`;
     }
-    return numStr; 
+    return str; 
 }
 
 async function loadDirectory() {
@@ -319,7 +317,6 @@ async function loadDirectory() {
             return;
         }
 
-        // FIXED: Passing event to quickAccess
         directoryList.innerHTML = numbers.map(n => {
             const formattedNum = formatPhoneNumber(n.phone_number);
             const displayTitle = n.project_name ? `${n.project_name} (${formattedNum})` : formattedNum;
@@ -327,14 +324,14 @@ async function loadDirectory() {
             return `
             <div class="directory-item" style="border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <strong style="font-size: 1.2rem; color: #007bff; cursor: pointer;" onclick="quickAccess(event, '${n.phone_number}')">
+                    <strong style="font-size: 1.2rem; color: #007bff; cursor: pointer;" onclick="quickAccess('${n.phone_number}')">
                         ${displayTitle}
                     </strong>
                     ${n.is_locked ? ' 🔒' : ''}
                     <br>
                     <small>${n.description || "No description provided."}</small>
                 </div>
-                <button onclick="quickAccess(event, '${n.phone_number}')">View</button>
+                <button onclick="quickAccess('${n.phone_number}')">View</button>
             </div>
             `;
         }).join('');
@@ -343,25 +340,28 @@ async function loadDirectory() {
     }
 }
 
-// FIXED: Cleaned up duplicate functions and added preventDefault/setTimeout
-window.quickAccess = async (event, num) => {
-    if (event) event.preventDefault(); 
-
+window.quickAccess = async (num) => {
+    // 1. Fill the inputs
     phoneNumberInput.value = num;
     passwordInput.value = ""; 
     
+    // 2. Fetch the data and build the HTML
     await accessNumber(); 
     
+    // 3. Wait 100ms for the browser to physically draw the audio players on the screen
     setTimeout(() => {
         const activeItem = document.getElementById('active-deployment');
         if (activeItem) {
+            // Scroll right to the active item
             activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
             
+            // Add a temporary glowing highlight so the user knows where they landed
             activeItem.style.transition = "background-color 0.5s";
-            activeItem.style.backgroundColor = "rgba(0, 255, 255, 0.2)"; 
-            setTimeout(() => activeItem.style.backgroundColor = "transparent", 1500); 
+            activeItem.style.backgroundColor = "rgba(0, 255, 255, 0.2)"; // Cyan glow
+            setTimeout(() => activeItem.style.backgroundColor = "", 1500); // Remove glow
             
         } else {
+            // Fallback: If no deployment exists, scroll to the top of the section
             step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }, 100);
