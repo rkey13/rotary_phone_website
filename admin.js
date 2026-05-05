@@ -91,7 +91,7 @@ function renderRecordings(recordings, numbers) {
                     <option value="0" ${!r.is_public ? 'selected' : ''}>Private</option>
                 </select>
             </td>
-            <td><audio controls src="${audioUrl}" style="height: 30px; width: 150px;"></audio></td>
+            <td><audio controls src="${audioUrl}" style="height: 30px; width: 240px;"></audio></td>
             <td>
                 <button class="danger-btn" onclick="adminAction('delete_recording', { id: ${r.id} })">Delete Audio</button>
             </td>
