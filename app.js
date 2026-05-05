@@ -39,6 +39,13 @@ async function accessNumber() {
 
     displayNumber.innerText = `Number: ${currentNumber}`;
     step2.classList.remove('hidden');
+
+    // --- NEW: Collapse the menus! ---
+    document.getElementById('instructions').removeAttribute('open');
+    document.getElementById('directory-section').removeAttribute('open');
+    // --------------------------------
+
+
     
     // Check Password Status First
     try {
