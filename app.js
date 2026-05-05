@@ -352,10 +352,24 @@ async function loadDirectory() {
     }
 }
 
-window.quickAccess = (num) => {
+
+window.quickAccess = async (num) => {
+    // 1. Fill the inputs
     phoneNumberInput.value = num;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    checkBtn.click();
+    passwordInput.value = ""; // Clear password so they enter as a guest by default
+    
+    // 2. Wait for the data and audio files to fully load
+    await accessNumber(); 
+    
+    // 3. Find the active deployment and scroll to it smoothly
+    const activeItem = document.getElementById('active-deployment');
+    if (activeItem) {
+        // block: 'center' pushes it to the middle of the screen
+        activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+        // Fallback: If there's no active deployment, just scroll to the top of the archive section
+        step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 };
 
 loadDirectory();
