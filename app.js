@@ -249,4 +249,123 @@ submitBtn.addEventListener('click', async () => {
             audioPreview.classList.add('hidden');
             descriptionInput.value = '';
             
-            submitBtn
+            submitBtn.innerText = "Submit to Archive";
+            refreshHistory();
+            if (typeof loadDirectory === 'function') loadDirectory();
+        } else {
+            const err = await res.text();
+            alert("Upload failed: " + err);
+            submitBtn.innerText = "Submit to Archive"; 
+            submitBtn.disabled = false;
+        }
+    } catch (err) {
+        console.error("Network Error:", err);
+        alert("Network error: Could not connect to the server.");
+        submitBtn.innerText = "Submit to Archive"; 
+        submitBtn.disabled = false;
+    }
+});
+
+// --- UPDATE SETTINGS WITHOUT AUDIO ---
+updateSettingsBtn.addEventListener('click', async () => {
+    updateSettingsBtn.innerText = "Saving...";
+    updateSettingsBtn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_URL}/api/update-settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                phoneNumber: currentNumber,
+                password: currentPassword,
+                projectName: numberNameInput.value.trim(),
+                lockNumber: lockNumberCheckbox.checked
+            })
+        });
+
+        if (res.ok) {
+            alert("Settings updated successfully!");
+            await refreshHistory();
+            if (typeof loadDirectory === 'function') loadDirectory();
+        } else {
+            const err = await res.text();
+            alert("Failed to update: " + err);
+        }
+    } catch (e) {
+        alert("Network error.");
+    }
+
+    updateSettingsBtn.innerText = "Save Settings";
+    updateSettingsBtn.disabled = false;
+});
+
+// --- DIRECTORY LOGIC ---
+const directoryList = document.getElementById('directoryList');
+
+function formatPhoneNumber(numStr) {
+    if (numStr && numStr.length === 7) {
+        return `${numStr.slice(0, 3)}-${numStr.slice(3)}`;
+    }
+    return numStr; 
+}
+
+async function loadDirectory() {
+    try {
+        const res = await fetch(`${API_URL}/api/directory`);
+        const numbers = await res.json();
+
+        if (numbers.length === 0) {
+            directoryList.innerHTML = "<p>The directory is currently empty.</p>";
+            return;
+        }
+
+        // FIXED: Passing event to quickAccess
+        directoryList.innerHTML = numbers.map(n => {
+            const formattedNum = formatPhoneNumber(n.phone_number);
+            const displayTitle = n.project_name ? `${n.project_name} (${formattedNum})` : formattedNum;
+            
+            return `
+            <div class="directory-item" style="border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong style="font-size: 1.2rem; color: #007bff; cursor: pointer;" onclick="quickAccess(event, '${n.phone_number}')">
+                        ${displayTitle}
+                    </strong>
+                    ${n.is_locked ? ' 🔒' : ''}
+                    <br>
+                    <small>${n.description || "No description provided."}</small>
+                </div>
+                <button onclick="quickAccess(event, '${n.phone_number}')">View</button>
+            </div>
+            `;
+        }).join('');
+    } catch (err) {
+        directoryList.innerHTML = "<p>Error loading directory.</p>";
+    }
+}
+
+// FIXED: Cleaned up duplicate functions and added preventDefault/setTimeout
+window.quickAccess = async (event, num) => {
+    if (event) event.preventDefault(); 
+
+    phoneNumberInput.value = num;
+    passwordInput.value = ""; 
+    
+    await accessNumber(); 
+    
+    setTimeout(() => {
+        const activeItem = document.getElementById('active-deployment');
+        if (activeItem) {
+            activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            activeItem.style.transition = "background-color 0.5s";
+            activeItem.style.backgroundColor = "rgba(0, 255, 255, 0.2)"; 
+            setTimeout(() => activeItem.style.backgroundColor = "transparent", 1500); 
+            
+        } else {
+            step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 100);
+};
+
+// Initial load
+loadDirectory();
