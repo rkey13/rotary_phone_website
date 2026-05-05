@@ -45,13 +45,19 @@ async function loadAdminData() {
     }
 }
 
+
 function renderNumbers(numbers) {
     const tbody = document.querySelector('#numbersTable tbody');
     tbody.innerHTML = numbers.map(n => `
         <tr>
             <td><strong>${n.phone_number}</strong></td>
             <td>${n.project_name || '-'}</td>
-            <td>${n.is_locked ? '🔒 Yes' : '🔓 No'}</td>
+            <td>
+                <select onchange="adminAction('toggle_lock', { phoneNumber: '${n.phone_number}', isLocked: parseInt(this.value) })">
+                    <option value="1" ${n.is_locked ? 'selected' : ''}>🔒 Locked</option>
+                    <option value="0" ${!n.is_locked ? 'selected' : ''}>🔓 Open</option>
+                </select>
+            </td>
             <td>
                 <button class="danger-btn" onclick="adminAction('delete_number', { phoneNumber: '${n.phone_number}' })">Delete Entire Number</button>
             </td>
@@ -70,13 +76,17 @@ function renderRecordings(recordings, numbers) {
         const isDeployed = deployedMap[r.id];
         const audioUrl = `${API_URL}/api/audio/${r.audio_filename}?pw=${encodeURIComponent(masterPassword)}`;
         
+        // Format the database timestamp into a readable local date/time string
+        // Adding 'Z' ensures the browser treats the UTC database time accurately
+        const formattedDate = new Date(r.created_at.replace(' ', 'T') + 'Z').toLocaleString();
+        
         return `
         <tr>
             <td>${r.id} ${isDeployed ? '<span class="badge">Active</span>' : ''}</td>
             <td>${r.phone_number}</td>
-            <td>${r.description}</td>
+            <td><small>${formattedDate}</small></td> <td>${r.description}</td>
             <td>
-                <select onchange="adminAction('toggle_privacy', { id: ${r.id}, isPublic: this.value })">
+                <select onchange="adminAction('toggle_privacy', { id: ${r.id}, isPublic: parseInt(this.value) })">
                     <option value="1" ${r.is_public ? 'selected' : ''}>Public</option>
                     <option value="0" ${!r.is_public ? 'selected' : ''}>Private</option>
                 </select>
@@ -89,6 +99,7 @@ function renderRecordings(recordings, numbers) {
     `;
     }).join('');
 }
+
 
 window.adminAction = async (actionType, payload) => {
     if (actionType.startsWith('delete') && !confirm("Are you sure? This is permanent and deletes the file from cloud storage!")) {
