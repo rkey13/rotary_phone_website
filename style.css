@@ -188,3 +188,40 @@ audio {
     box-shadow: 0 0 10px #00ffff;
     margin-top: 10px;
 }
+
+/* --- COLLAPSIBLE MENUS --- */
+details summary {
+    cursor: pointer;
+    list-style: none; /* Hides the default browser arrow */
+    outline: none;
+    user-select: none;
+}
+
+/* Hides the default arrow in Safari/Chrome specifically */
+details summary::-webkit-details-marker {
+    display: none; 
+}
+
+/* Makes the H3 sit on the same line as our custom toggle icon */
+details summary h3 {
+    display: inline-block;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* The custom [+] icon when closed */
+details summary::before {
+    content: '[+] ';
+    color: #bfff00;
+    font-weight: bold;
+    font-size: 1.2rem;
+    vertical-align: middle;
+    text-shadow: 0 0 5px #bfff00;
+}
+
+/* The custom [-] icon when open */
+details[open] summary::before {
+    content: '[-] ';
+    color: #ff00ff;
+    text-shadow: 0 0 5px #ff00ff;
+}
