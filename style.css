@@ -164,6 +164,12 @@ input:focus {
     text-shadow: 0 0 5px #bfff00;
 }
 
+#historyList {
+    max-height: 450px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
 /* Custom Neon Scrollbar */
 ::-webkit-scrollbar { width: 10px; }
 ::-webkit-scrollbar-track { background: #05000a; }
