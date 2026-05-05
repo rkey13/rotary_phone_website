@@ -104,9 +104,10 @@ async function refreshHistory() {
         historyList.innerHTML = data.recordings.map(item => {
             const isDeployed = data.state && data.state.deployed_recording_id === item.id;
             const audioUrl = `${API_URL}/api/audio/${item.audio_filename}?pw=${encodeURIComponent(currentPassword)}`;
-            
+
+            // We add id="active-deployment" to the active item so we can find it later
             return `
-            <div class="history-item">
+            <div class="history-item"> ${isDeployed ? 'id="active-deployment"' : ''}>
                 <strong>${new Date(item.date).toLocaleString()}</strong>
                 ${isDeployed ? '<span class="badge">Active Deployment</span>' : ''}
                 ${item.is_public === 0 ? '<span class="private-badge">Private</span>' : ''}
