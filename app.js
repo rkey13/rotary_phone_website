@@ -33,7 +33,8 @@ let audioChunks = [];
 
 // --- LOAD NUMBER DATA ---
 // --- LOAD NUMBER DATA ---
-checkBtn.addEventListener('click', async () => {
+// --- LOAD NUMBER DATA ---
+async function accessNumber() {
     currentNumber = phoneNumberInput.value.trim();
     currentPassword = passwordInput.value.trim();
     
@@ -53,23 +54,27 @@ checkBtn.addEventListener('click', async () => {
         
         if (verifyData.status === "new") {
             passwordStatusBadge.innerText = "✨ Unclaimed Number";
-            passwordStatusBadge.style.background = "#ff00ff"; // Pink
-            updateSettingsBtn.disabled = true; // Can't update settings on a number that doesn't exist yet
+            passwordStatusBadge.style.background = "#ff00ff";
+            if(updateSettingsBtn) updateSettingsBtn.disabled = true; 
         } else if (verifyData.status === "owner") {
             passwordStatusBadge.innerText = "🔑 Owner Verified";
-            passwordStatusBadge.style.background = "#00cc00"; // Green
-            updateSettingsBtn.disabled = false;
+            passwordStatusBadge.style.background = "#00cc00";
+            if(updateSettingsBtn) updateSettingsBtn.disabled = false;
         } else {
             passwordStatusBadge.innerText = "👁️ Guest Mode (Read Only)";
-            passwordStatusBadge.style.background = "#ff9900"; // Orange
-            updateSettingsBtn.disabled = true; // Guests can't change settings
+            passwordStatusBadge.style.background = "#ff9900";
+            if(updateSettingsBtn) updateSettingsBtn.disabled = true; 
         }
     } catch (e) {
         passwordStatusBadge.innerText = "Connection Error";
     }
 
     await refreshHistory();
-});
+}
+
+// Attach the function to the button click
+checkBtn.addEventListener('click', accessNumber);
+
 
 async function refreshHistory() {
     historyList.innerHTML = "<em>Loading...</em>";
