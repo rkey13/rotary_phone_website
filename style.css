@@ -123,6 +123,7 @@ input:focus {
     box-shadow: 2px 2px 10px rgba(191, 255, 0, 0.1);
 }
 
+
 /* Glowing Badges */
 .badge {
     background: #00ffff;
@@ -134,6 +135,11 @@ input:focus {
     box-shadow: 0 0 8px #00ffff;
     margin-left: 10px;
     text-transform: uppercase;
+    
+    /* NEW: Mobile optimizations */
+    display: inline-block; 
+    white-space: nowrap; /* Prevents text from ever splitting to two lines */
+    margin-bottom: 5px;  /* Adds breathing room if it gets pushed to a new line */
 }
 
 .private-badge {
@@ -146,6 +152,11 @@ input:focus {
     box-shadow: 0 0 8px #ff00ff;
     margin-left: 10px;
     text-transform: uppercase;
+    
+    /* NEW: Mobile optimizations */
+    display: inline-block;
+    white-space: nowrap; 
+    margin-bottom: 5px;
 }
 
 /* Directory Override */
