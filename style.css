@@ -198,6 +198,7 @@ audio {
     border-radius: 30px;
     box-shadow: 0 0 10px #00ffff;
     margin-top: 10px;
+    max-width: 100%; /* NEW: Ensures the player never breaks out of its box on mobile */
 }
 
 /* --- COLLAPSIBLE MENUS --- */
