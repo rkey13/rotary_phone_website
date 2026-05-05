@@ -16,15 +16,17 @@
       <h3>For assistance contact rotaryphoneotherworld@gmail.com</h3>
     </a>
 
-    <div id="instructions" class="section">
-        <h3>How to Use the Archive</h3>
-        <ul>
-            <li><strong>Claim a Number:</strong> Enter any 1 to 7 digit number. If it is empty, you claim it by making the first audio submission!</li>
-            <li><strong>The Password System:</strong> If you provide a password when claiming a number, you become its owner. If you leave it blank, it becomes an open "voicemail" where anyone can leave a recording.</li>
-            <li><strong>Locking a Line:</strong> Checking the "Lock number" box freezes the line. Once locked, only the owner (using the correct password) can submit new audio.</li>
-            <li><strong>Active Deployments:</strong> If a number has multiple recordings, the "Active Deployment" is the specific file that will play when someone dials this number on the physical rotary phone.</li>
-        </ul>
-    </div>
+    <details id="instructions" class="section">
+        <summary><h3>How to Use the Archive</h3></summary>
+        <div style="margin-top: 15px;">
+            <ul>
+                <li><strong>Claim a Number:</strong> Enter any 1 to 7 digit number. If it is empty, you claim it by making the first audio submission!</li>
+                <li><strong>The Password System:</strong> If you provide a password when claiming a number, you become its owner. If you leave it blank, it becomes an open "voicemail" where anyone can leave a recording.</li>
+                <li><strong>Locking a Line:</strong> Checking the "Lock number" box freezes the line. Once locked, only the owner (using the correct password) can submit new audio.</li>
+                <li><strong>Active Deployments:</strong> If a number has multiple recordings, the "Active Deployment" is the specific file that will play when someone dials this number on the physical rotary phone.</li>
+            </ul>
+        </div>
+    </details>
     
     <div id="step-1" class="section">
         <label><strong>Enter Phone Number (1-7 digits):</strong></label>
@@ -82,11 +84,14 @@
         </div>
     </div>
         
-    <div id="directory-section" class="section">
-        <h3>Public Directory</h3>
-        <p>Click a number to visit its archive.</p>
-        <div id="directoryList">Loading directory...</div>
-    </div>
+
+    <details id="directory-section" class="section" open>
+        <summary><h3>Public Directory</h3></summary>
+        <div style="margin-top: 15px;">
+            <p>Click a number to visit its archive.</p>
+            <div id="directoryList">Loading directory...</div>
+        </div>
+    </details>
 
 </body>
 </html>
