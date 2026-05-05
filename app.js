@@ -8,7 +8,6 @@ const passwordInput = document.getElementById('numberPassword');
 const checkBtn = document.getElementById('checkBtn');
 const step2 = document.getElementById('step-2');
 const displayNumber = document.getElementById('displayNumber');
-// FIXED: Added displayProjectName in case you added it to your HTML
 const displayProjectName = document.getElementById('displayProjectName'); 
 const numberStatus = document.getElementById('numberStatus');
 const historyList = document.getElementById('historyList');
@@ -19,7 +18,7 @@ const recordBtn = document.getElementById('recordBtn');
 const stopBtn = document.getElementById('stopBtn');
 const audioPreview = document.getElementById('audioPreview');
 const descriptionInput = document.getElementById('description');
-const numberNameInput = document.getElementById('projectName'); // Your project name input
+const numberNameInput = document.getElementById('projectName'); 
 const isPublicCheckbox = document.getElementById('isPublic');
 const lockNumberCheckbox = document.getElementById('lockNumber');
 const submitBtn = document.getElementById('submitBtn');
@@ -31,8 +30,6 @@ let mediaRecorder;
 let activeRecordingExtension = 'webm'; 
 let audioChunks = [];
 
-// --- LOAD NUMBER DATA ---
-// --- LOAD NUMBER DATA ---
 // --- LOAD NUMBER DATA ---
 async function accessNumber() {
     currentNumber = phoneNumberInput.value.trim();
@@ -82,7 +79,6 @@ async function refreshHistory() {
         const res = await fetch(`${API_URL}/api/history/${currentNumber}`);
         const data = await res.json();
         
-        // FIXED: Pull the project name from the database and show it / prefill the input
         if (data.state && data.state.project_name) {
             if (displayProjectName) displayProjectName.innerText = data.state.project_name;
             if (numberNameInput) numberNameInput.value = data.state.project_name; 
@@ -92,13 +88,12 @@ async function refreshHistory() {
         }
 
         // Handle Lock State
-        // Handle Lock State
         if (data.state && data.state.is_locked === 1) {
             numberStatus.innerText = "🔒 This number is locked. Only the owner can submit new recordings.";
-            lockNumberCheckbox.checked = true; // Check the box!
+            lockNumberCheckbox.checked = true;
         } else {
             numberStatus.innerText = "🔓 This number is open. Anyone can leave a recording without a password.";
-            lockNumberCheckbox.checked = false; // Uncheck the box!
+            lockNumberCheckbox.checked = false;
         }
 
         if (data.recordings.length === 0) {
@@ -110,9 +105,9 @@ async function refreshHistory() {
             const isDeployed = data.state && data.state.deployed_recording_id === item.id;
             const audioUrl = `${API_URL}/api/audio/${item.audio_filename}?pw=${encodeURIComponent(currentPassword)}`;
 
-            // We add id="active-deployment" to the active item so we can find it later
+            // FIXED: Corrected the HTML tag syntax here
             return `
-            <div class="history-item"> ${isDeployed ? 'id="active-deployment"' : ''}>
+            <div class="history-item" ${isDeployed ? 'id="active-deployment"' : ''}>
                 <strong>${new Date(item.date).toLocaleString()}</strong>
                 ${isDeployed ? '<span class="badge">Active Deployment</span>' : ''}
                 ${item.is_public === 0 ? '<span class="private-badge">Private</span>' : ''}
@@ -226,8 +221,6 @@ submitBtn.addEventListener('click', async () => {
     const formData = new FormData();
     formData.append('phoneNumber', currentNumber);
     
-    // FIXED: Actually append the project name to the form data being sent to the Worker!
-    // We use "projectName" as the key because that is what the Cloudflare Worker is looking for.
     if (numberNameInput) {
         formData.append('projectName', numberNameInput.value.trim());
     }
@@ -256,128 +249,4 @@ submitBtn.addEventListener('click', async () => {
             audioPreview.classList.add('hidden');
             descriptionInput.value = '';
             
-            submitBtn.innerText = "Submit to Archive";
-            refreshHistory();
-            if (typeof loadDirectory === 'function') loadDirectory();
-        } else {
-            const err = await res.text();
-            alert("Upload failed: " + err);
-            submitBtn.innerText = "Submit to Archive"; 
-            submitBtn.disabled = false;
-        }
-    } catch (err) {
-        console.error("Network Error:", err);
-        alert("Network error: Could not connect to the server.");
-        submitBtn.innerText = "Submit to Archive"; 
-        submitBtn.disabled = false;
-    }
-});
-
-// --- UPDATE SETTINGS WITHOUT AUDIO ---
-updateSettingsBtn.addEventListener('click', async () => {
-    updateSettingsBtn.innerText = "Saving...";
-    updateSettingsBtn.disabled = true;
-
-    try {
-        const res = await fetch(`${API_URL}/api/update-settings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                phoneNumber: currentNumber,
-                password: currentPassword,
-                projectName: numberNameInput.value.trim(),
-                lockNumber: lockNumberCheckbox.checked
-            })
-        });
-
-        if (res.ok) {
-            alert("Settings updated successfully!");
-            await refreshHistory();
-            if (typeof loadDirectory === 'function') loadDirectory();
-        } else {
-            const err = await res.text();
-            alert("Failed to update: " + err);
-        }
-    } catch (e) {
-        alert("Network error.");
-    }
-
-    updateSettingsBtn.innerText = "Save Settings";
-    updateSettingsBtn.disabled = false;
-});
-
-// --- DIRECTORY LOGIC ---
-// --- DIRECTORY LOGIC ---
-const directoryList = document.getElementById('directoryList');
-
-// Helper function to format 7-digit numbers with a hyphen
-function formatPhoneNumber(numStr) {
-    if (numStr && numStr.length === 7) {
-        return `${numStr.slice(0, 3)}-${numStr.slice(3)}`;
-    }
-    return numStr; // Return shorter numbers (like '911' or '007') exactly as they are
-}
-
-async function loadDirectory() {
-    try {
-        const res = await fetch(`${API_URL}/api/directory`);
-        const numbers = await res.json();
-
-        if (numbers.length === 0) {
-            directoryList.innerHTML = "<p>The directory is currently empty.</p>";
-            return;
-        }
-
-        directoryList.innerHTML = numbers.map(n => {
-            // Apply the formatting here for the visual title
-            const formattedNum = formatPhoneNumber(n.phone_number);
-            const displayTitle = n.project_name ? `${n.project_name} (${formattedNum})` : formattedNum;
-            
-            return `
-            <div class="directory-item" style="border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong style="font-size: 1.2rem; color: #007bff; cursor: pointer;" onclick="quickAccess('${n.phone_number}')">
-                        ${displayTitle}
-                    </strong>
-                    ${n.is_locked ? ' 🔒' : ''}
-                    <br>
-                    <small>${n.description || "No description provided."}</small>
-                </div>
-                <button onclick="quickAccess('${n.phone_number}')">View</button>
-            </div>
-            `;
-        }).join('');
-    } catch (err) {
-        directoryList.innerHTML = "<p>Error loading directory.</p>";
-    }
-}
-
-
-window.quickAccess = async (num) => {
-    // 1. Fill the inputs
-    phoneNumberInput.value = num;
-    passwordInput.value = ""; // Clear password so they enter as a guest by default
-    
-    // 2. Wait for the data and audio files to fully load
-    await accessNumber(); 
-    
-    // 3. Find the active deployment and scroll to it smoothly
-    const activeItem = document.getElementById('active-deployment');
-    if (activeItem) {
-        // block: 'center' pushes it to the middle of the screen
-        activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-        // Fallback: If there's no active deployment, just scroll to the top of the archive section
-        step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-};
-
-loadDirectory();
-
-window.quickAccess = (num) => {
-    phoneNumberInput.value = num;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    checkBtn.click();
-};
-
-loadDirectory();
+            submitBtn
