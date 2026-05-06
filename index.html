@@ -31,7 +31,7 @@
     <div id="step-1" class="section">
         <label><strong>Enter Phone Number (1-7 digits):</strong></label>
         <input type="text" id="phoneNumber" maxlength="7" pattern="\d*">
-        <label><strong>Password (leave blank if none):</strong></label>
+        <label><strong>Password (Optional, leave blank if none):</strong></label>
         <input type="password" id="numberPassword" placeholder="Optional">
         <button id="checkBtn">Access Number</button>
     </div>
@@ -52,10 +52,10 @@
 
         <div id="settingsSection" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
             <h3>Line Settings</h3>
-            <label><strong>Line/Project Name (Optional):</strong></label>
+            <label><strong>Project Name (Optional), use this to assign a name to this number in the phonebook index so people knwo which project or person left the message:</strong></label>
             <input type="text" id="projectName" placeholder="e.g., The Secret Hotline">
             
-            <label><input type="checkbox" id="lockNumber"> Lock number? (Prevents public audio submissions)</label><br><br>
+            <label><input type="checkbox" id="lockNumber"> Lock number? (Prevents public audio submissions, do this if you want to prevent others from submitting new audio files to this number)</label><br><br>
             <button id="updateSettingsBtn">Save Settings</button>
         </div>
 
