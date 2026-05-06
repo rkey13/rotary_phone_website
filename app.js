@@ -12,7 +12,7 @@ const displayProjectName = document.getElementById('displayProjectName');
 const numberStatus = document.getElementById('numberStatus');
 const historyList = document.getElementById('historyList');
 const recordingSection = document.getElementById('recordingSection');
-
+const settingsSection = document.getElementById('settingsSection'); // <-- Add this!
 const fileUpload = document.getElementById('fileUpload');
 const recordBtn = document.getElementById('recordBtn');
 const stopBtn = document.getElementById('stopBtn');
@@ -25,6 +25,7 @@ const submitBtn = document.getElementById('submitBtn');
 
 let currentNumber = "";
 let currentPassword = "";
+let currentAuthStatus = "guest"; // <-- Add this to track their permission level
 let activeAudioFile = null; 
 let mediaRecorder;
 let activeRecordingExtension = 'webm'; 
@@ -57,14 +58,17 @@ async function accessNumber() {
         const verifyData = await verifyRes.json();
         
         if (verifyData.status === "new") {
+            currentAuthStatus = "new"; // <-- Add this
             passwordStatusBadge.innerText = "✨ Unclaimed Number";
             passwordStatusBadge.style.background = "#ff00ff";
             if(updateSettingsBtn) updateSettingsBtn.disabled = true; 
         } else if (verifyData.status === "owner") {
+            currentAuthStatus = "owner"; // <-- Add this
             passwordStatusBadge.innerText = "🔑 Owner Verified";
             passwordStatusBadge.style.background = "#00cc00";
             if(updateSettingsBtn) updateSettingsBtn.disabled = false;
         } else {
+            currentAuthStatus = "guest"; // <-- Add this
             passwordStatusBadge.innerText = "👁️ Guest Mode (Read Only)";
             passwordStatusBadge.style.background = "#ff9900";
             if(updateSettingsBtn) updateSettingsBtn.disabled = true; 
@@ -93,13 +97,44 @@ async function refreshHistory() {
         }
 
         // Handle Lock State
-        if (data.state && data.state.is_locked === 1) {
-            numberStatus.innerText = "🔒 This number is locked. Only the owner can submit new recordings.";
-            lockNumberCheckbox.checked = true;
+        // --- UI VISIBILITY LOGIC ---
+        if (data.state) { // The number already exists in the database
+            
+            if (data.state.is_locked === 1) {
+                // IT IS LOCKED
+                lockNumberCheckbox.checked = true;
+                
+                if (currentAuthStatus === "owner") {
+                    numberStatus.innerText = "🔒 This number is locked to the public. As the owner, you can submit new recordings.";
+                    if (settingsSection) settingsSection.classList.remove('hidden');
+                    recordingSection.classList.remove('hidden');
+                } else {
+                    numberStatus.innerText = "🔒 This number is locked. Correct password required to submit new recordings.";
+                    if (settingsSection) settingsSection.classList.add('hidden');
+                    recordingSection.classList.add('hidden'); // Hides the form entirely!
+                }
+                
+            } else {
+                // IT IS OPEN
+                lockNumberCheckbox.checked = false;
+                numberStatus.innerText = "🔓 This number is open. Anyone can leave a recording.";
+                recordingSection.classList.remove('hidden'); // Always allow recordings on open lines
+                
+                // Only the owner gets to see the Line Settings to change the name or lock it
+                if (currentAuthStatus === "owner") {
+                    if (settingsSection) settingsSection.classList.remove('hidden');
+                } else {
+                    if (settingsSection) settingsSection.classList.add('hidden');
+                }
+            }
+            
         } else {
-            numberStatus.innerText = "🔓 This number is open. Anyone can leave a recording without a password.";
-            lockNumberCheckbox.checked = false;
+            // BRAND NEW NUMBER
+            numberStatus.innerText = "✨ This is a new number. Submitting audio will claim it.";
+            if (settingsSection) settingsSection.classList.add('hidden'); // Can't edit settings until claimed
+            recordingSection.classList.remove('hidden');
         }
+
 
         if (data.recordings.length === 0) {
             historyList.innerHTML = "<p>Brand new number! You will set the password upon first submission.</p>";
